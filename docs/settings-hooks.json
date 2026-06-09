@@ -1,0 +1,23 @@
+{
+  "//": "Merge the entries below into the `hooks` object of ~/.claude/settings.json. Keep any existing `say` commands on these events — add claude-dash alongside them. Do NOT add claude-dash to `Notification`. If claude-dash is not on your hook shell's PATH, replace `claude-dash hook` with `/Users/tariqrahman/go/bin/claude-dash hook`.",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+    ],
+    "PermissionRequest": [
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+    ],
+    "SessionEnd": [
+      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+    ]
+  }
+}

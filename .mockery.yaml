@@ -1,0 +1,9 @@
+with-expecter: true
+inpackage: true
+dir: "{{.InterfaceDir}}"
+filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+mockname: "Mock{{.InterfaceName}}"
+packages:
+  github.com/tariqrahman/claude-dash/internal/project:
+    interfaces:
+      Runner:
