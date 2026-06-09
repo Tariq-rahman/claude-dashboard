@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tariqrahman/claude-dash/internal/state"
+	"github.com/Tariq-rahman/claude-dashboard/internal/state"
 )
 
 const (

@@ -1,4 +1,4 @@
-module github.com/tariqrahman/claude-dash
+module github.com/Tariq-rahman/claude-dashboard
 
 go 1.25.7
 

@@ -11,8 +11,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/tariqrahman/claude-dash/internal/state"
-	"github.com/tariqrahman/claude-dash/internal/store"
+	"github.com/Tariq-rahman/claude-dashboard/internal/state"
+	"github.com/Tariq-rahman/claude-dashboard/internal/store"
 )
 
 // Config holds the reaping thresholds and poll interval.

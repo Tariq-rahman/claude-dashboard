@@ -1,7 +1,7 @@
-// Command claude-dash is a glanceable map of every local Claude Code instance.
+// Command claude-dashboard is a glanceable map of every local Claude Code instance.
 //
-//	claude-dash         launches the TUI (default)
-//	claude-dash hook    invoked by Claude Code hooks; reads the payload on stdin
+//	claude-dashboard         launches the TUI (default)
+//	claude-dashboard hook    invoked by Claude Code hooks; reads the payload on stdin
 //
 // One binary keeps the hook writer and the TUI reader from drifting out of sync.
 package main
@@ -15,10 +15,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/tariqrahman/claude-dash/internal/hook"
-	"github.com/tariqrahman/claude-dash/internal/project"
-	"github.com/tariqrahman/claude-dash/internal/store"
-	"github.com/tariqrahman/claude-dash/internal/tui"
+	"github.com/Tariq-rahman/claude-dashboard/internal/hook"
+	"github.com/Tariq-rahman/claude-dashboard/internal/project"
+	"github.com/Tariq-rahman/claude-dashboard/internal/store"
+	"github.com/Tariq-rahman/claude-dashboard/internal/tui"
 )
 
 func main() {

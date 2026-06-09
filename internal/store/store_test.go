@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/tariqrahman/claude-dash/internal/state"
+	"github.com/Tariq-rahman/claude-dashboard/internal/state"
 )
 
 func sampleRecord() Record {

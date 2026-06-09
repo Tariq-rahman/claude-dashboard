@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/tariqrahman/claude-dash/internal/state"
+	"github.com/Tariq-rahman/claude-dashboard/internal/state"
 )
 
 var (

@@ -15,9 +15,9 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/tariqrahman/claude-dash/internal/project"
-	"github.com/tariqrahman/claude-dash/internal/state"
-	"github.com/tariqrahman/claude-dash/internal/store"
+	"github.com/Tariq-rahman/claude-dashboard/internal/project"
+	"github.com/Tariq-rahman/claude-dashboard/internal/state"
+	"github.com/Tariq-rahman/claude-dashboard/internal/store"
 )
 
 // maxStatusMessageLen caps the rendered permission status_message.

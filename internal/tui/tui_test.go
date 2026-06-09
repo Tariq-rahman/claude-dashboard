@@ -8,8 +8,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tariqrahman/claude-dash/internal/state"
-	"github.com/tariqrahman/claude-dash/internal/store"
+	"github.com/Tariq-rahman/claude-dashboard/internal/state"
+	"github.com/Tariq-rahman/claude-dashboard/internal/store"
 )
 
 var now = time.Date(2026, time.June, 9, 14, 0, 0, 0, time.UTC)

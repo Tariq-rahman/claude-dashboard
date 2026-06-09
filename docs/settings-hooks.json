@@ -1,23 +1,23 @@
 {
-  "//": "Merge the entries below into the `hooks` object of ~/.claude/settings.json. Keep any existing `say` commands on these events — add claude-dash alongside them. Do NOT add claude-dash to `Notification`. If claude-dash is not on your hook shell's PATH, replace `claude-dash hook` with `/Users/tariqrahman/go/bin/claude-dash hook`.",
+  "//": "Merge the entries below into the `hooks` object of ~/.claude/settings.json. Keep any existing `say` commands on these events — add claude-dashboard alongside them. Do NOT add claude-dashboard to `Notification`. If claude-dashboard is not on your hook shell's PATH, replace `claude-dashboard hook` with `/Users/tariqrahman/go/bin/claude-dashboard hook`.",
   "hooks": {
     "SessionStart": [
-      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+      { "hooks": [ { "type": "command", "command": "claude-dashboard hook" } ] }
     ],
     "UserPromptSubmit": [
-      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+      { "hooks": [ { "type": "command", "command": "claude-dashboard hook" } ] }
     ],
     "PostToolUse": [
-      { "matcher": "*", "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "claude-dashboard hook" } ] }
     ],
     "PermissionRequest": [
-      { "matcher": "*", "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+      { "matcher": "*", "hooks": [ { "type": "command", "command": "claude-dashboard hook" } ] }
     ],
     "Stop": [
-      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+      { "hooks": [ { "type": "command", "command": "claude-dashboard hook" } ] }
     ],
     "SessionEnd": [
-      { "hooks": [ { "type": "command", "command": "claude-dash hook" } ] }
+      { "hooks": [ { "type": "command", "command": "claude-dashboard hook" } ] }
     ]
   }
 }
