@@ -21,6 +21,63 @@ func (_m *MockRunner) EXPECT() *MockRunner_Expecter {
 	return &MockRunner_Expecter{mock: &_m.Mock}
 }
 
+// CurrentBranch provides a mock function with given fields: ctx, dir
+func (_m *MockRunner) CurrentBranch(ctx context.Context, dir string) (string, error) {
+	ret := _m.Called(ctx, dir)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CurrentBranch")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, dir)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, dir)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, dir)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockRunner_CurrentBranch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CurrentBranch'
+type MockRunner_CurrentBranch_Call struct {
+	*mock.Call
+}
+
+// CurrentBranch is a helper method to define mock.On call
+//   - ctx context.Context
+//   - dir string
+func (_e *MockRunner_Expecter) CurrentBranch(ctx interface{}, dir interface{}) *MockRunner_CurrentBranch_Call {
+	return &MockRunner_CurrentBranch_Call{Call: _e.mock.On("CurrentBranch", ctx, dir)}
+}
+
+func (_c *MockRunner_CurrentBranch_Call) Run(run func(ctx context.Context, dir string)) *MockRunner_CurrentBranch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockRunner_CurrentBranch_Call) Return(_a0 string, _a1 error) *MockRunner_CurrentBranch_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockRunner_CurrentBranch_Call) RunAndReturn(run func(context.Context, string) (string, error)) *MockRunner_CurrentBranch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ShowTopLevel provides a mock function with given fields: ctx, dir
 func (_m *MockRunner) ShowTopLevel(ctx context.Context, dir string) (string, error) {
 	ret := _m.Called(ctx, dir)
@@ -49,8 +106,7 @@ func (_m *MockRunner) ShowTopLevel(ctx context.Context, dir string) (string, err
 	return r0, r1
 }
 
-// MockRunner_ShowTopLevel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method
-// 'ShowTopLevel'
+// MockRunner_ShowTopLevel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ShowTopLevel'
 type MockRunner_ShowTopLevel_Call struct {
 	*mock.Call
 }
@@ -58,7 +114,7 @@ type MockRunner_ShowTopLevel_Call struct {
 // ShowTopLevel is a helper method to define mock.On call
 //   - ctx context.Context
 //   - dir string
-func (_e *MockRunner_Expecter) ShowTopLevel(ctx any, dir any) *MockRunner_ShowTopLevel_Call {
+func (_e *MockRunner_Expecter) ShowTopLevel(ctx interface{}, dir interface{}) *MockRunner_ShowTopLevel_Call {
 	return &MockRunner_ShowTopLevel_Call{Call: _e.mock.On("ShowTopLevel", ctx, dir)}
 }
 
@@ -66,7 +122,6 @@ func (_c *MockRunner_ShowTopLevel_Call) Run(run func(ctx context.Context, dir st
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
-
 	return _c
 }
 
@@ -75,23 +130,19 @@ func (_c *MockRunner_ShowTopLevel_Call) Return(_a0 string, _a1 error) *MockRunne
 	return _c
 }
 
-func (_c *MockRunner_ShowTopLevel_Call) RunAndReturn(
-	run func(context.Context, string) (string, error),
-) *MockRunner_ShowTopLevel_Call {
+func (_c *MockRunner_ShowTopLevel_Call) RunAndReturn(run func(context.Context, string) (string, error)) *MockRunner_ShowTopLevel_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// NewMockRunner creates a new instance of MockRunner. It also registers a testing interface on the mock and a cleanup
-// function to assert the mocks expectations.
+// NewMockRunner creates a new instance of MockRunner. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockRunner(t interface {
 	mock.TestingT
 	Cleanup(func())
-},
-) *MockRunner {
+}) *MockRunner {
 	mock := &MockRunner{}
-	mock.Test(t)
+	mock.Mock.Test(t)
 
 	t.Cleanup(func() { mock.AssertExpectations(t) })
 

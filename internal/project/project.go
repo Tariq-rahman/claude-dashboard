@@ -18,6 +18,10 @@ type Runner interface {
 	// dir, equivalent to `git -C dir rev-parse --show-toplevel`. It returns a
 	// non-nil error when dir is not inside a git repository.
 	ShowTopLevel(ctx context.Context, dir string) (string, error)
+	// CurrentBranch returns the abbreviated branch name for dir, equivalent to
+	// `git -C dir rev-parse --abbrev-ref HEAD`. Returns a non-nil error when dir
+	// is not inside a git repository.
+	CurrentBranch(ctx context.Context, dir string) (string, error)
 }
 
 // Resolver derives project names using an injected git Runner.
@@ -41,4 +45,16 @@ func (r *Resolver) GetName(ctx context.Context, cwd string) string {
 	}
 
 	return filepath.Base(cwd)
+}
+
+// GetBranch returns the git branch for cwd. It returns "" when cwd is not inside
+// a git repository or git yields a blank branch. A detached HEAD prints "HEAD",
+// which is kept as-is.
+func (r *Resolver) GetBranch(ctx context.Context, cwd string) string {
+	branch, err := r.git.CurrentBranch(ctx, cwd)
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimSpace(branch)
 }

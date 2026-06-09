@@ -4,6 +4,6 @@ dir: "{{.InterfaceDir}}"
 filename: "mock_{{.InterfaceName | snakecase}}_test.go"
 mockname: "Mock{{.InterfaceName}}"
 packages:
-  github.com/tariqrahman/claude-dash/internal/project:
+  github.com/Tariq-rahman/claude-dashboard/internal/project:
     interfaces:
       Runner:

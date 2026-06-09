@@ -74,3 +74,58 @@ func TestResolver_GetName(t *testing.T) {
 		})
 	}
 }
+
+func TestResolver_GetBranch(t *testing.T) {
+	t.Parallel()
+
+	const cwd = "/Users/tariqrahman/Projects/payments/instalment"
+
+	tests := []struct {
+		name      string
+		mockSetup func(m *MockRunner)
+		want      string
+	}{
+		{
+			name: "returns branch name on success",
+			mockSetup: func(m *MockRunner) {
+				m.EXPECT().CurrentBranch(t.Context(), cwd).Return("pay-258", nil)
+			},
+			want: "pay-258",
+		},
+		{
+			name: "trims surrounding whitespace from git output",
+			mockSetup: func(m *MockRunner) {
+				m.EXPECT().CurrentBranch(t.Context(), cwd).Return("  main\n", nil)
+			},
+			want: "main",
+		},
+		{
+			name: "returns blank when not in a repo",
+			mockSetup: func(m *MockRunner) {
+				m.EXPECT().CurrentBranch(t.Context(), cwd).Return("", errNoRepo)
+			},
+			want: "",
+		},
+		{
+			name: "returns blank when git yields only whitespace",
+			mockSetup: func(m *MockRunner) {
+				m.EXPECT().CurrentBranch(t.Context(), cwd).Return("  \n", nil)
+			},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			mockRunner := NewMockRunner(t)
+			tt.mockSetup(mockRunner)
+
+			resolver := NewResolver(mockRunner)
+			got := resolver.GetBranch(t.Context(), cwd)
+
+			require.Equalf(t, tt.want, got, "branch mismatch")
+		})
+	}
+}

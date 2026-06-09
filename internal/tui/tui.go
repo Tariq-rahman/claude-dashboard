@@ -60,6 +60,9 @@ type rowView struct {
 	stale bool
 }
 
+// defaultWidth is the assumed terminal width before the first WindowSizeMsg.
+const defaultWidth = 80
+
 // Model is the Bubble Tea model for the dashboard.
 type Model struct {
 	store  *store.Store
@@ -67,12 +70,13 @@ type Model struct {
 	now    time.Time
 	rows   []rowView
 	cursor int
+	width  int
 	err    error
 }
 
 // New returns a dashboard Model backed by st.
 func New(st *store.Store, cfg Config) Model {
-	return Model{store: st, cfg: cfg}
+	return Model{store: st, cfg: cfg, width: defaultWidth}
 }
 
 // Init kicks off an immediate poll and starts the recurring ticker.
@@ -93,6 +97,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		m = m.refresh(time.Time(msg))
 		return m, tickCmd(m.cfg.PollEvery)
+
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		return m, nil
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)

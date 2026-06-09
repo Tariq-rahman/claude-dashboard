@@ -27,9 +27,11 @@ const (
 type Record struct {
 	SessionID     string      `json:"session_id"`
 	Project       string      `json:"project"`
+	Branch        string      `json:"branch"` // git branch for the session
 	Cwd           string      `json:"cwd"`
 	State         state.State `json:"state"`
-	StatusMessage string      `json:"status_message"`
+	StatusMessage string      `json:"status_message"` // permission tool detail
+	Prompt        string      `json:"prompt"`         // sanitized last-user-prompt snippet
 	UpdatedAt     time.Time   `json:"updated_at"`
 }
 

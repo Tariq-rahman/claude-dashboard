@@ -25,3 +25,15 @@ func (ExecRunner) ShowTopLevel(ctx context.Context, dir string) (string, error) 
 
 	return string(out), nil
 }
+
+// CurrentBranch runs `git -C dir rev-parse --abbrev-ref HEAD`.
+func (ExecRunner) CurrentBranch(ctx context.Context, dir string) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "-C", dir, "rev-parse", "--abbrev-ref", "HEAD")
+
+	out, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("git rev-parse --abbrev-ref HEAD in %s: %w", dir, err)
+	}
+
+	return string(out), nil
+}

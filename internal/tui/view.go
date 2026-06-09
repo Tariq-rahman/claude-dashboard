@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/Tariq-rahman/claude-dashboard/internal/state"
+	"github.com/Tariq-rahman/claude-dashboard/internal/store"
 )
 
 var (
@@ -71,15 +72,33 @@ func (m Model) View() string {
 	return b.String()
 }
 
-// statusWidth is the fixed column width for the status_message field.
-const statusWidth = 40
+const (
+	// detailPrefix marks the second (context) line of a row.
+	detailPrefix = "↳ "
+	// detailIndent aligns the context line under the project column of line 1.
+	detailIndent = "         "
+	// placeholder stands in for an absent branch or detail.
+	placeholder = "—"
+	// minDetailWidth is the smallest detail budget we ever truncate to, so a
+	// very narrow terminal never yields a negative width.
+	minDetailWidth = 8
+)
 
+// renderRow renders one instance as a two-line selectable block: an identifying
+// line (icon · label · project · branch · age) and an indented context line
+// showing the permission tool detail (when awaiting permission) or the last
+// user-prompt snippet otherwise.
 func (m Model) renderRow(i int, row rowView) string {
 	icon, label := glyph(row.rec.State)
 	age := formatAge(m.now.Sub(row.rec.UpdatedAt))
 
-	line := fmt.Sprintf("%s %-8s %-14s %-40s %5s",
-		icon, label, row.rec.Project, truncateField(row.rec.StatusMessage, statusWidth), age)
+	branch := row.rec.Branch
+	if branch == "" {
+		branch = placeholder
+	}
+
+	line1 := fmt.Sprintf("%s %-8s %-14s %-14s %5s", icon, label, row.rec.Project, branch, age)
+	line2 := detailIndent + detailPrefix + truncateField(m.detailText(row.rec), m.detailWidth())
 
 	style := lipgloss.NewStyle().Foreground(bandColour(row.rec.State))
 	if row.stale {
@@ -89,7 +108,33 @@ func (m Model) renderRow(i int, row rowView) string {
 		style = style.Inherit(selectedStyle)
 	}
 
-	return style.Render(line)
+	return style.Render(line1) + "\n" + style.Render(line2)
+}
+
+// detailText is the context line's content: the tool detail for a permission
+// request (the urgent "what is it asking to run"), the prompt snippet otherwise,
+// and a placeholder when neither is set.
+func (m Model) detailText(rec store.Record) string {
+	detail := rec.Prompt
+	if rec.State == state.WaitingForPermission {
+		detail = rec.StatusMessage
+	}
+	if detail == "" {
+		return placeholder
+	}
+
+	return detail
+}
+
+// detailWidth is the rune budget for the context line: the terminal width less
+// the indent and the "↳ " marker, floored at minDetailWidth.
+func (m Model) detailWidth() int {
+	w := m.width - len([]rune(detailIndent)) - len([]rune(detailPrefix))
+	if w < minDetailWidth {
+		return minDetailWidth
+	}
+
+	return w
 }
 
 func truncateField(s string, limit int) string {

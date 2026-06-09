@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -22,6 +23,9 @@ import (
 
 // maxStatusMessageLen caps the rendered permission status_message.
 const maxStatusMessageLen = 80
+
+// maxPromptLen caps the stored last-user-prompt snippet.
+const maxPromptLen = 200
 
 // logFilePerm is the mode for the hook error log.
 const logFilePerm = 0o600
@@ -36,6 +40,7 @@ type payload struct {
 	Cwd           string          `json:"cwd"`
 	ToolName      string          `json:"tool_name"`
 	ToolInput     json.RawMessage `json:"tool_input"`
+	Prompt        string          `json:"prompt"`
 }
 
 // toolInput holds the key fields we surface from a permission request.
@@ -118,6 +123,18 @@ func (h *Hook) handle(ctx context.Context, evt payload) error {
 		rec.StatusMessage = ""
 	}
 
+	// Branch is refreshed only on SessionStart and UserPromptSubmit, keeping git
+	// off the PostToolUse hot path. Other events preserve the cached branch.
+	if evt.HookEventName == "SessionStart" || evt.HookEventName == "UserPromptSubmit" {
+		rec.Branch = h.resolver.GetBranch(ctx, evt.Cwd)
+	}
+
+	// The prompt snippet is captured on UserPromptSubmit and preserved across all
+	// subsequent events of the session.
+	if evt.HookEventName == "UserPromptSubmit" {
+		rec.Prompt = sanitizePrompt(evt.Prompt)
+	}
+
 	if err := h.store.Save(rec); err != nil {
 		return fmt.Errorf("saving record: %w", err)
 	}
@@ -147,6 +164,13 @@ func statusMessage(toolName string, rawInput json.RawMessage) string {
 	}
 
 	return truncate(msg, maxStatusMessageLen)
+}
+
+// sanitizePrompt collapses every run of whitespace (including newlines) to a
+// single space and trims (strings.Fields handles both), then caps the result at
+// maxPromptLen runes so a pasted multi-line prompt renders as one tidy snippet.
+func sanitizePrompt(s string) string {
+	return truncate(strings.Join(strings.Fields(s), " "), maxPromptLen)
 }
 
 // truncate caps s at limit runes, replacing the final rune with an ellipsis
