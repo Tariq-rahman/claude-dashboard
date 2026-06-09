@@ -38,7 +38,7 @@ claude-dash hook    # invoked by Claude Code hooks; reads the payload on stdin
 ## Install
 
 ```sh
-go install github.com/tariqrahman/claude-dash@latest
+go install github.com/tariqrahman/claude-dash@latest 
 ```
 
 This installs the binary to `$(go env GOPATH)/bin/claude-dash`
