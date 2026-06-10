@@ -5,12 +5,15 @@
 package tui
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/Tariq-rahman/claude-dashboard/internal/focus"
 	"github.com/Tariq-rahman/claude-dashboard/internal/state"
 	"github.com/Tariq-rahman/claude-dashboard/internal/store"
 )
@@ -63,20 +66,28 @@ type rowView struct {
 // defaultWidth is the assumed terminal width before the first WindowSizeMsg.
 const defaultWidth = 80
 
-// Model is the Bubble Tea model for the dashboard.
-type Model struct {
-	store  *store.Store
-	cfg    Config
-	now    time.Time
-	rows   []rowView
-	cursor int
-	width  int
-	err    error
+// focuser brings a terminal to the foreground. *focus.Focuser satisfies it in
+// production; tests inject a fake so no windows actually move.
+type focuser interface {
+	Focus(ctx context.Context, termType, termID string) error
 }
 
-// New returns a dashboard Model backed by st.
-func New(st *store.Store, cfg Config) Model {
-	return Model{store: st, cfg: cfg, width: defaultWidth}
+// Model is the Bubble Tea model for the dashboard.
+type Model struct {
+	store   *store.Store
+	cfg     Config
+	focuser focuser
+	now     time.Time
+	rows    []rowView
+	cursor  int
+	width   int
+	err     error  // loud failures, rendered in red
+	notice  string // soft transient hints (e.g. "jump not available")
+}
+
+// New returns a dashboard Model backed by st, using f to jump to terminals.
+func New(st *store.Store, cfg Config, f focuser) Model {
+	return Model{store: st, cfg: cfg, focuser: f, width: defaultWidth}
 }
 
 // Init kicks off an immediate poll and starts the recurring ticker.
@@ -124,11 +135,40 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.cursor++
 		}
 
+	case msg.Type == tea.KeyEnter:
+		m = m.jumpSelected()
+
 	case msg.String() == "d":
 		m = m.dismissSelected()
 	}
 
 	return m, nil
+}
+
+// jumpSelected brings the selected row's terminal to the foreground. It is
+// synchronous: osascript returns well under the 1s poll interval, so a blocking
+// call keeps the model logic simple. ErrJumpUnavailable (unknown terminal) and
+// ErrTargetNotFound (closed tab) are soft outcomes shown as a footer notice;
+// any other error is a loud failure shown in red.
+func (m Model) jumpSelected() Model {
+	if m.cursor < 0 || m.cursor >= len(m.rows) {
+		return m
+	}
+
+	m.err = nil
+	m.notice = ""
+
+	rec := m.rows[m.cursor].rec
+	err := m.focuser.Focus(context.Background(), rec.TerminalType, rec.TerminalID)
+	switch {
+	case err == nil:
+	case errors.Is(err, focus.ErrJumpUnavailable), errors.Is(err, focus.ErrTargetNotFound):
+		m.notice = err.Error()
+	default:
+		m.err = err
+	}
+
+	return m
 }
 
 // dismissSelected deletes the selected row's state file (the manual escape
@@ -150,6 +190,7 @@ func (m Model) dismissSelected() Model {
 // sorted, greyed row list.
 func (m Model) refresh(t time.Time) Model {
 	m.now = t
+	m.notice = "" // soft hints are transient — clear them each poll
 
 	records, err := m.store.ListRecords()
 	if err != nil {

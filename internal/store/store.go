@@ -33,6 +33,12 @@ type Record struct {
 	StatusMessage string      `json:"status_message"` // permission tool detail
 	Prompt        string      `json:"prompt"`         // sanitized last-user-prompt snippet
 	UpdatedAt     time.Time   `json:"updated_at"`
+	// TerminalType identifies the originating terminal for the jump action:
+	// "iterm2", "jetbrains", or "" (unknown — no jump available).
+	TerminalType string `json:"terminal_type"`
+	// TerminalID is the terminal-specific target: the iTerm2 ITERM_SESSION_ID or
+	// a JetBrains IDE bundle id. Empty for unknown terminals.
+	TerminalID string `json:"terminal_id"`
 }
 
 // Store reads and writes session records under a single dashboard directory.

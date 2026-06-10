@@ -7,3 +7,6 @@ packages:
   github.com/Tariq-rahman/claude-dashboard/internal/project:
     interfaces:
       Runner:
+  github.com/Tariq-rahman/claude-dashboard/internal/focus:
+    interfaces:
+      Runner:

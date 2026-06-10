@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -8,9 +10,26 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/require"
 
+	"github.com/Tariq-rahman/claude-dashboard/internal/focus"
 	"github.com/Tariq-rahman/claude-dashboard/internal/state"
 	"github.com/Tariq-rahman/claude-dashboard/internal/store"
 )
+
+// fakeFocuser records the last Focus call and returns a configured error.
+type fakeFocuser struct {
+	calls   int
+	gotType string
+	gotID   string
+	err     error
+}
+
+func (f *fakeFocuser) Focus(_ context.Context, termType, termID string) error {
+	f.calls++
+	f.gotType = termType
+	f.gotID = termID
+
+	return f.err
+}
 
 var now = time.Date(2026, time.June, 9, 14, 0, 0, 0, time.UTC)
 
@@ -151,7 +170,7 @@ func TestModel_TickReapsAndGreys(t *testing.T) {
 		require.NoErrorf(t, st.Save(r), "seed %s", r.SessionID)
 	}
 
-	m := New(st, DefaultConfig())
+	m := New(st, DefaultConfig(), nil)
 	m = updateModel(t, m, tickMsg(now))
 
 	// Dropped records are deleted from the store.
@@ -182,7 +201,7 @@ func TestModel_CursorMovement(t *testing.T) {
 		require.NoErrorf(t, st.Save(r), "seed %s", r.SessionID)
 	}
 
-	m := New(st, DefaultConfig())
+	m := New(st, DefaultConfig(), nil)
 	m = updateModel(t, m, tickMsg(now))
 	require.Equalf(t, 0, m.cursor, "cursor should start at 0")
 
@@ -214,7 +233,7 @@ func TestModel_DismissDeletesSelectedFile(t *testing.T) {
 		require.NoErrorf(t, st.Save(r), "seed %s", r.SessionID)
 	}
 
-	m := New(st, DefaultConfig())
+	m := New(st, DefaultConfig(), nil)
 	m = updateModel(t, m, tickMsg(now))
 
 	// Cursor 0 is "perm" (top band). Dismiss it.
@@ -241,12 +260,88 @@ func TestModel_QuitKeys(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			m := New(store.New(t.TempDir()), DefaultConfig())
+			m := New(store.New(t.TempDir()), DefaultConfig(), nil)
 			_, cmd := m.Update(tt.msg)
 			require.NotNilf(t, cmd, "quit key should return a command")
 			require.IsTypef(t, tea.QuitMsg{}, cmd(), "command should be tea.Quit")
 		})
 	}
+}
+
+func TestModel_JumpSelected(t *testing.T) {
+	t.Parallel()
+
+	// seedOne stores a single record so cursor 0 is deterministic.
+	seedOne := func(t *testing.T, r store.Record) *store.Store {
+		t.Helper()
+
+		st := store.New(t.TempDir())
+		r.SessionID = "s"
+		r.State = state.WaitingForPermission // pinned visible, never reaped
+		r.UpdatedAt = now
+		require.NoErrorf(t, st.Save(r), "seed record")
+
+		return st
+	}
+
+	t.Run("enter focuses the selected row's terminal", func(t *testing.T) {
+		t.Parallel()
+
+		st := seedOne(t, store.Record{TerminalType: "iterm2", TerminalID: "w0t1p0:UUID"})
+		f := &fakeFocuser{}
+
+		m := New(st, DefaultConfig(), f)
+		m = updateModel(t, m, tickMsg(now))
+		m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyEnter})
+
+		require.Equalf(t, 1, f.calls, "focuser should be invoked once")
+		require.Equalf(t, "iterm2", f.gotType, "should pass the row's terminal type")
+		require.Equalf(t, "w0t1p0:UUID", f.gotID, "should pass the row's terminal id")
+		require.NoErrorf(t, m.err, "a successful jump must not set the loud error")
+		require.Emptyf(t, m.notice, "a successful jump must not set a notice")
+	})
+
+	t.Run("an unavailable jump shows a footer notice, not the loud error", func(t *testing.T) {
+		t.Parallel()
+
+		st := seedOne(t, store.Record{}) // no terminal fields
+		f := &fakeFocuser{err: focus.ErrJumpUnavailable}
+
+		m := New(st, DefaultConfig(), f)
+		m = updateModel(t, m, tickMsg(now))
+		m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyEnter})
+
+		require.NoErrorf(t, m.err, "an unavailable jump must not set the loud error")
+		require.NotEmptyf(t, m.notice, "an unavailable jump should set a footer notice")
+	})
+
+	t.Run("a closed target shows a footer notice, not the loud error", func(t *testing.T) {
+		t.Parallel()
+
+		st := seedOne(t, store.Record{TerminalType: "iterm2", TerminalID: "w0t1p0:GONE"})
+		f := &fakeFocuser{err: focus.ErrTargetNotFound}
+
+		m := New(st, DefaultConfig(), f)
+		m = updateModel(t, m, tickMsg(now))
+		m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyEnter})
+
+		require.NoErrorf(t, m.err, "a closed target must not set the loud error")
+		require.NotEmptyf(t, m.notice, "a closed target should set a footer notice")
+	})
+
+	t.Run("an unexpected focuser error lands in m.err", func(t *testing.T) {
+		t.Parallel()
+
+		st := seedOne(t, store.Record{TerminalType: "iterm2", TerminalID: "w0t1p0:UUID"})
+		f := &fakeFocuser{err: errors.New("osascript: command not found")}
+
+		m := New(st, DefaultConfig(), f)
+		m = updateModel(t, m, tickMsg(now))
+		m = updateModel(t, m, tea.KeyMsg{Type: tea.KeyEnter})
+
+		require.Errorf(t, m.err, "an unexpected error should land in the loud m.err")
+		require.Emptyf(t, m.notice, "an unexpected error should not set the soft notice")
+	})
 }
 
 func TestFormatAge(t *testing.T) {

@@ -67,7 +67,12 @@ func (m Model) View() string {
 		b.WriteByte('\n')
 	}
 
-	b.WriteString(helpStyle.Render("↑/↓ select · d dismiss · q quit"))
+	if m.notice != "" {
+		b.WriteString(helpStyle.Render(m.notice))
+		b.WriteByte('\n')
+	}
+
+	b.WriteString(helpStyle.Render("↑/↓ select · enter jump · d dismiss · q quit"))
 
 	return b.String()
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/Tariq-rahman/claude-dashboard/internal/project"
 	"github.com/Tariq-rahman/claude-dashboard/internal/state"
 	"github.com/Tariq-rahman/claude-dashboard/internal/store"
+	"github.com/Tariq-rahman/claude-dashboard/internal/terminal"
 )
 
 // maxStatusMessageLen caps the rendered permission status_message.
@@ -56,11 +57,14 @@ type Hook struct {
 	store    *store.Store
 	resolver *project.Resolver
 	now      func() time.Time
+	getenv   func(string) string
 }
 
-// New returns a Hook backed by the given store, project resolver, and clock.
-func New(st *store.Store, resolver *project.Resolver, now func() time.Time) *Hook {
-	return &Hook{store: st, resolver: resolver, now: now}
+// New returns a Hook backed by the given store, project resolver, clock, and
+// environment lookup. getenv is injected (rather than calling os.Getenv
+// directly) so terminal-identity capture is unit-testable.
+func New(st *store.Store, resolver *project.Resolver, now func() time.Time, getenv func(string) string) *Hook {
+	return &Hook{store: st, resolver: resolver, now: now, getenv: getenv}
 }
 
 // Run reads a hook payload from r and applies it to the store.
@@ -134,6 +138,13 @@ func (h *Hook) handle(ctx context.Context, evt payload) error {
 	if evt.HookEventName == "UserPromptSubmit" {
 		rec.Prompt = sanitizePrompt(evt.Prompt)
 	}
+
+	// Terminal identity is captured on every event from the session's own
+	// environment — a cheap getenv that keeps the record self-healing even when
+	// the dashboard hook is added mid-session.
+	id := terminal.Detect(h.getenv)
+	rec.TerminalType = id.Type
+	rec.TerminalID = id.ID
 
 	if err := h.store.Save(rec); err != nil {
 		return fmt.Errorf("saving record: %w", err)

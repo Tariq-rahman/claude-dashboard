@@ -15,6 +15,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/Tariq-rahman/claude-dashboard/internal/focus"
 	"github.com/Tariq-rahman/claude-dashboard/internal/hook"
 	"github.com/Tariq-rahman/claude-dashboard/internal/project"
 	"github.com/Tariq-rahman/claude-dashboard/internal/store"
@@ -49,6 +50,7 @@ func runHook(dir string) {
 		store.New(dir),
 		project.NewResolver(project.NewExecRunner()),
 		func() time.Time { return time.Now().UTC() },
+		os.Getenv,
 	)
 
 	hook.Execute(context.Background(), os.Stdin, h, filepath.Join(dir, "hook-errors.log"))
@@ -57,7 +59,7 @@ func runHook(dir string) {
 
 // runTUI launches the dashboard. Unlike the hook, it fails loudly.
 func runTUI(dir string) {
-	model := tui.New(store.New(dir), tui.DefaultConfig())
+	model := tui.New(store.New(dir), tui.DefaultConfig(), focus.New(focus.NewExecRunner()))
 
 	if _, err := tea.NewProgram(model, tea.WithAltScreen()).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "claude-dash:", err)

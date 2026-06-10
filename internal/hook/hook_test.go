@@ -50,7 +50,7 @@ func newTestHook(t *testing.T) (*Hook, *store.Store) {
 
 	st := store.New(t.TempDir())
 	resolver := project.NewResolver(project.NewExecRunner())
-	h := New(st, resolver, func() time.Time { return fixedNow })
+	h := New(st, resolver, func() time.Time { return fixedNow }, func(string) string { return "" })
 
 	return h, st
 }
@@ -392,6 +392,58 @@ func TestHook_Handle_Branch(t *testing.T) {
 		require.NoErrorf(t, err, "Get")
 		require.Equalf(t, "pay-258", got.Branch, "branch must be preserved on PostToolUse, not recomputed")
 	})
+}
+
+func TestHook_Handle_TerminalIdentity(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		env      map[string]string
+		wantType string
+		wantID   string
+	}{
+		{
+			name:     "iterm2 session id captured",
+			env:      map[string]string{"ITERM_SESSION_ID": "w0t1p0:UUID-1"},
+			wantType: "iterm2",
+			wantID:   "w0t1p0:UUID-1",
+		},
+		{
+			name: "jetbrains bundle id captured",
+			env: map[string]string{
+				"TERMINAL_EMULATOR":    "JetBrains-JediTerm",
+				"__CFBundleIdentifier": "com.jetbrains.goland",
+			},
+			wantType: "jetbrains",
+			wantID:   "com.jetbrains.goland",
+		},
+		{
+			name:     "unknown terminal leaves the fields empty",
+			env:      map[string]string{},
+			wantType: "",
+			wantID:   "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			st := store.New(t.TempDir())
+			getenv := func(key string) string { return tt.env[key] }
+			h := New(st, project.NewResolver(project.NewExecRunner()), func() time.Time { return fixedNow }, getenv)
+
+			require.NoErrorf(t, h.Run(t.Context(), strings.NewReader(
+				`{"hook_event_name":"PostToolUse","session_id":"s","cwd":"/tmp/proj"}`,
+			)), "Run")
+
+			got, err := st.Get("s")
+			require.NoErrorf(t, err, "Get")
+			require.Equalf(t, tt.wantType, got.TerminalType, "terminal type mismatch")
+			require.Equalf(t, tt.wantID, got.TerminalID, "terminal id mismatch")
+		})
+	}
 }
 
 func TestHook_Handle_StatusMessageBlankForNonPermission(t *testing.T) {

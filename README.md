@@ -45,6 +45,17 @@ This installs the binary to `$(go env GOPATH)/bin/claude-dashboard`
 (`/Users/tariqrahman/go/bin/claude-dashboard`). Either put that directory on your
 `PATH`, or reference the absolute path in the hook config below.
 
+## Update
+
+Re-run the install command to pull and rebuild the latest version:
+
+```sh
+go install github.com/Tariq-rahman/claude-dashboard@latest
+```
+
+To install local changes from a checkout instead, run `go install .` from the
+repo root.
+
 ## Run
 
 ```sh
